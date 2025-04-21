@@ -33,13 +33,13 @@ class TripController extends Controller
         $user = User::find($request->user_id);
         $vehicleType = VehicleType::find($request->vehicle_type_id);
 
-        $fare = $this->fareService->calculateFare($user, $vehicleType, $request->distance, $request->requests_per_minute);
+        $result = $this->fareService->calculateFare($user, $vehicleType, $request->distance, $request->requests_per_minute);
 
-        if (is_string($fare)) {
-            return response()->json(['error' => $fare], 400);
+        if (isset($result['error'])) {
+            return response()->json(['error' => $result['error']], 400);
         }
 
-        return response()->json(['fare' => $fare], 200);
+        return response()->json($result, 200);
     }
 
     public function storeTrip(Request $request)
@@ -61,16 +61,4 @@ class TripController extends Controller
         $users = User::all();
         return response()->json($users);
     }
-
-    // public function getTrips() {
-    //     $trips = Trip::all();  // Assuming you're using a Trip model and it has the necessary fields
-
-    //     // Check if there are any trips, and return accordingly
-    //     if ($trips->isEmpty()) {
-    //         return response()->json(['message' => 'No trips found'], 404);
-    //     }
-
-    //     return response()->json($trips);
-    // }
 }
-

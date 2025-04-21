@@ -37,6 +37,12 @@
             border-radius: 10px;
             margin: 20px 0;
         }
+        .fare-details {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #6a11cb;
+        }
         .loading-spinner {
             display: none;
             width: 2rem;
@@ -130,6 +136,41 @@
                         <div class="text-muted mb-2">Estimated Fare</div>
                         <div>₹<span id="fareDisplay">--</span></div>
                     </div>
+
+                    <div class="fare-details mt-4 d-none" id="fareDetails">
+                        <h5 class="mb-3"><i class="bi bi-receipt"></i> Fare Breakdown</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Base Fare:</span>
+                                    <span>₹<span id="baseFare">0</span></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Distance Cost (<span id="distanceValue">0</span> km × ₹<span id="costPerKm">0</span>):</span>
+                                    <span>₹<span id="distanceCost">0</span></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <span>₹<span id="subtotal">0</span></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2" id="surgeContainer">
+                                    <span>Surge Pricing (<span id="surgeMultiplier">1x</span>):</span>
+                                    <span>×<span id="surgeValue">1</span></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-success" id="discountContainer">
+                                    <span>First Trip Discount (10%):</span>
+                                    <span>-10%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Total Fare:</span>
+                            <span>₹<span id="totalFare">0</span></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -162,7 +203,6 @@
                                 </tr>
                             </thead>
                             <tbody id="tripsTableBody" class="align-middle">
-                                <!-- Dynamically populated rows will go here -->
                                 <tr id="noTripsRow">
                                     <td colspan="5" class="text-center text-muted py-4">No trips booked yet</td>
                                 </tr>
@@ -187,7 +227,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     users.forEach(user => {
         const option = document.createElement('option');
         option.value = user.id;
-        option.textContent = user.name;  // Assuming the user has a name field
+        option.textContent = user.name;
         userSelect.appendChild(option);
     });
 });
@@ -225,7 +265,7 @@ document.getElementById('calculateFare').addEventListener('click', async functio
     }
 
     if (!isValid) {
-        return; // Stop if any validation fails
+        return;
     }
 
     // Show loading state
@@ -237,7 +277,7 @@ document.getElementById('calculateFare').addEventListener('click', async functio
     spinner.style.display = 'inline-block';
     calculateBtn.disabled = true;
 
-    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');  // Get CSRF token
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {
         const response = await fetch('/api/calculate-fare', {
@@ -245,7 +285,7 @@ document.getElementById('calculateFare').addEventListener('click', async functio
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-CSRF-TOKEN': token  // Include CSRF token in the headers
+                'X-CSRF-TOKEN': token
             },
             body: JSON.stringify({ user_id, vehicle_type_id, distance, requests_per_minute: rpm })
         });
@@ -262,6 +302,34 @@ document.getElementById('calculateFare').addEventListener('click', async functio
             messageText.textContent = 'Fare calculated successfully!';
             messageBox.classList.remove('d-none');
 
+            // Show fare breakdown details
+            document.getElementById('fareDetails').classList.remove('d-none');
+            document.getElementById('baseFare').textContent = data.base_fare;
+            document.getElementById('distanceValue').textContent = distance;
+            document.getElementById('costPerKm').textContent = data.cost_per_km;
+            document.getElementById('distanceCost').textContent = (data.cost_per_km * distance).toFixed(2);
+            document.getElementById('subtotal').textContent = data.subtotal;
+            document.getElementById('totalFare').textContent = data.fare;
+
+            // Show surge pricing if applicable
+            const surgeContainer = document.getElementById('surgeContainer');
+            if (data.surge_multiplier > 1) {
+                surgeContainer.classList.remove('d-none');
+                surgeContainer.classList.add('text-warning');
+                document.getElementById('surgeMultiplier').textContent = `${data.surge_multiplier}x`;
+                document.getElementById('surgeValue').textContent = data.surge_multiplier;
+            } else {
+                surgeContainer.classList.add('d-none');
+            }
+
+            // Show discount if applicable
+            const discountContainer = document.getElementById('discountContainer');
+            if (data.has_discount) {
+                discountContainer.classList.remove('d-none');
+            } else {
+                discountContainer.classList.add('d-none');
+            }
+
             // Scroll to fare display
             document.querySelector('.fare-display').scrollIntoView({
                 behavior: 'smooth',
@@ -272,6 +340,7 @@ document.getElementById('calculateFare').addEventListener('click', async functio
             messageText.textContent = data.error || 'Error calculating fare';
             messageBox.classList.remove('d-none');
             document.getElementById('bookTrip').classList.add('d-none');
+            document.getElementById('fareDetails').classList.add('d-none');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -281,22 +350,21 @@ document.getElementById('calculateFare').addEventListener('click', async functio
         messageText.textContent = 'Network error. Please try again.';
         messageBox.classList.remove('d-none');
     } finally {
-        // Reset loading state
         calculateText.textContent = 'Calculate Fare';
         spinner.style.display = 'none';
         calculateBtn.disabled = false;
     }
 });
 
+// Rest of your existing JavaScript remains the same...
 document.getElementById('bookTrip').addEventListener('click', async function () {
     const user_id = document.getElementById('user_id').value;
     const vehicle_type_id = document.getElementById('vehicle_type_id').value;
     const distance = document.getElementById('distance').value;
     const fare = document.getElementById('fareDisplay').textContent;
 
-    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');  // Get CSRF token
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    // Show loading state on book button
     const bookBtn = document.getElementById('bookTrip');
     const originalHtml = bookBtn.innerHTML;
     bookBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Booking...';
@@ -308,7 +376,7 @@ document.getElementById('bookTrip').addEventListener('click', async function () 
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-CSRF-TOKEN': token  // Include CSRF token in the headers
+                'X-CSRF-TOKEN': token
             },
             body: JSON.stringify({ user_id, vehicle_type_id, distance, fare })
         });
@@ -318,11 +386,9 @@ document.getElementById('bookTrip').addEventListener('click', async function () 
         const messageText = document.getElementById('messageText');
 
         if (response.ok) {
-            // Hide the "no trips" row if it exists
             const noTripsRow = document.getElementById('noTripsRow');
             if (noTripsRow) noTripsRow.style.display = 'none';
 
-            // Add the new trip to the table
             const tripRow = document.createElement('tr');
             tripRow.className = 'trip-row';
             tripRow.innerHTML = `
@@ -338,10 +404,8 @@ document.getElementById('bookTrip').addEventListener('click', async function () 
             messageText.textContent = 'Trip booked successfully!';
             messageBox.classList.remove('d-none');
 
-            // Reset form
             document.getElementById('bookTrip').classList.add('d-none');
 
-            // Scroll to trips table
             document.getElementById('tripsTableBody').scrollIntoView({
                 behavior: 'smooth',
                 block: 'start'
@@ -359,7 +423,6 @@ document.getElementById('bookTrip').addEventListener('click', async function () 
         messageText.textContent = 'Network error. Please try again.';
         messageBox.classList.remove('d-none');
     } finally {
-        // Reset button state
         bookBtn.innerHTML = originalHtml;
         bookBtn.disabled = false;
     }
@@ -382,7 +445,6 @@ document.getElementById('filterVehicle').addEventListener('change', function () 
         }
     }
 
-    // Show "no trips" message if all rows are filtered out
     const noTripsRow = document.getElementById('noTripsRow');
     if (noTripsRow) {
         if (visibleRows === 0 && filterValue !== '') {
@@ -408,13 +470,11 @@ function getVehicleTypeName(id) {
     }
 }
 
-// Clear all error messages
 function clearErrors() {
     const fields = document.querySelectorAll('.form-control, .form-select');
     fields.forEach(field => field.classList.remove('is-invalid'));
 }
 
-// Add input validation on blur
 document.querySelectorAll('input, select').forEach(element => {
     element.addEventListener('blur', function() {
         if (this.required && !this.value) {
