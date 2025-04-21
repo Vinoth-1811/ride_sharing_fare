@@ -1,0 +1,30 @@
+
+
+**Ride-Sharing Fare Estimation System – INSTALLATION & SETUP GUIDE**
+
+1. **COPY .ENV FILE**
+Copy the `.env.example` file from the project root and rename it to `.env`.
+
+2. **CONFIGURE DATABASE**
+Open the `.env` file and set `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` with your local database credentials.
+
+3. **INSTALL NODE.JS DEPENDENCIES**
+Run the following command to install all required Node packages:
+`npm install`
+
+4. **INSTALL PHP DEPENDENCIES**
+Run Composer to install backend dependencies:
+`composer install`
+
+5. **RUN MIGRATIONS AND SEEDERS**
+Execute the following command to create database tables and insert default data:
+`php artisan migrate`
+
+6. **GENERATE APPLICATION KEY**
+Run this command to generate the Laravel encryption key:
+`php artisan key:generate`
+
+7. **START DEVELOPMENT SERVER**
+Start your local Laravel server using:
+`php artisan serve`
+

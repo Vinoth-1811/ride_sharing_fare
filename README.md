@@ -59,3 +59,42 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+## Ride-Sharing Fare Estimation System – Installation & Setup Guide
+
+1. **Copy .env File**  
+    Copy the `.env.example` file from the project root and rename it to `.env`.
+
+2. **Configure Database**  
+    Open the `.env` file and set `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` with your local database credentials.
+
+3. **Install Node.js Dependencies**  
+    Run the following command to install all required Node packages:  
+    ```bash
+    npm install
+    ```
+
+4. **Install PHP Dependencies**  
+    Run Composer to install backend dependencies:  
+    ```bash
+    composer install
+    ```
+
+5. **Run Migrations and Seeders**  
+    Execute the following command to create database tables and insert default data:  
+    ```bash
+    php artisan migrate
+    ```
+
+6. **Generate Application Key**  
+    Run this command to generate the Laravel encryption key:  
+    ```bash
+    php artisan key:generate
+    ```
+
+7. **Start Development Server**  
+    Start your local Laravel server using:  
+    ```bash
+    php artisan serve
+    ```
